@@ -11,6 +11,7 @@ import yaml
 
 from pytest_kubernetes.kubectl import Kubectl
 from pytest_kubernetes.options import ClusterOptions
+from pytest_kubernetes.portforwarding import PortForwarding
 
 
 class AClusterManager(ABC):
@@ -36,6 +37,10 @@ class AClusterManager(ABC):
         Load a container image into this cluster
     logs():
         Get the logs of a pod
+    port_forwarding():
+        Port forward a target
+    wait():
+        Wait for a target to be ready
     version():
         Get the Kubernetes version of this cluster
     create():
@@ -111,9 +116,11 @@ class AClusterManager(ABC):
     # Interface
     #
 
-    def kubectl(self, args: List[str], as_dict: bool = True) -> Union[Dict, str]:
+    def kubectl(
+        self, args: List[str], as_dict: bool = True, timeout: int = 60
+    ) -> Union[Dict, str]:
         """Execute kubectl command against this cluster"""
-        return Kubectl(self.kubeconfig, self.context)(args, as_dict)
+        return Kubectl(self.kubeconfig, self.context)(args, as_dict, timeout)
 
     def apply(self, input: Union[Path, Dict]) -> None:
         """Apply resources to this cluster, either from YAML file, or Python dict"""
@@ -133,6 +140,40 @@ class AClusterManager(ABC):
         else:
             raise RuntimeError(f"Input must be of type Path or dict, was {type(input)}")
 
+    def wait(
+        self, name: str, waitfor: str, timeout: int = 90, namespace: str = "default"
+    ) -> None:
+        """Wait for a target and a contition"""
+        self.kubectl(
+            [
+                "wait",
+                name,
+                f"--for={waitfor}",
+                f"--timeout={timeout}s",
+                f"--namespace={namespace}",
+            ],
+            as_dict=False,
+            timeout=timeout,
+        )
+
+    def port_forwarding(
+        self,
+        target: str,
+        source_port: int,
+        target_port: int,
+        namespace: str = "default",
+        timeout: int = 90,
+    ) -> PortForwarding:
+        """Forward a local port to a pod"""
+        return PortForwarding(
+            target,
+            (source_port, target_port),
+            namespace,
+            self.kubeconfig,
+            self.context,
+            timeout,
+        )
+
     @abstractmethod
     def load_image(self, image: str) -> None:
         """Load a container image into this cluster"""
@@ -150,7 +191,9 @@ class AClusterManager(ABC):
         data = self.kubectl(["version"])
         return int(data["serverVersion"]["major"]), int(data["serverVersion"]["minor"])  # type: ignore
 
-    def create(self, cluster_options: Optional[ClusterOptions] = None, **kwargs) -> None:
+    def create(
+        self, cluster_options: Optional[ClusterOptions] = None, **kwargs
+    ) -> None:
         """Create this cluster"""
         self._cluster_options = cluster_options or self._cluster_options
         if not self._cluster_options.kubeconfig_path:

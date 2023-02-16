@@ -83,6 +83,25 @@ class KubernetesManagerTest:
         else:
             raise exception
 
+    def test_f_portforwarding(self):
+        import urllib.request
+
+        self.cluster.create()
+        self.cluster.apply(
+            (Path(__file__).parent / Path("./fixtures/hello.yaml")).resolve()
+        )
+        self.cluster.wait("deployments/hello-nginxdemo", "condition=Available=True")
+        forwarding_nginx = self.cluster.port_forwarding("svc/hello-nginx", 9090, 80)
+        with forwarding_nginx:
+            response = urllib.request.urlopen("http://127.0.0.1:9090", timeout=20)
+            assert response.status == 200
+
+        forwarding_nginx = self.cluster.port_forwarding("svc/hello-nginx", 9090, 80)
+        forwarding_nginx.start()
+        response = urllib.request.urlopen("http://127.0.0.1:9090", timeout=20)
+        assert response.status == 200
+        forwarding_nginx.stop()
+
     def teardown_method(self, method):
         self.cluster.delete()
 

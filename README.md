@@ -8,6 +8,8 @@ about the *kubeconfig* on the test machine.
 - Configure the cluster to recreate for each test case (default), or keep it across multiple test cases
 - Automatic management of the *kubeconfig*
 - Simple functions to run kubectl commands (with *dict* output), reading logs and load custom container images
+- Wait for certain conditions in the cluster
+- Port forward Kubernetes-based services (using kubectl port-forward) easily during a test case
 - Management utils for custom pytest-fixtures (for example pre-provisioned clusters)
  
 ## Installation
@@ -35,15 +37,18 @@ Please make sure they are installed to run pytest-kubernetes properly.
 The _k8s_ fixture provides access to an automatically selected Kubernetes provider (depending on the availability on the host). The priority is: k3d, kind, minikube-docker and minikube-kvm2.
 
 The fixture passes a manager object of type *AClusterManager*.
+
 It provides the following interface:
-- *kubectl(...)*: Execute kubectl command against this cluster
-- *apply(...)*: Apply resources to this cluster, either from YAML file, or Python dict
-- *load_image(...)*: Load a container image into this cluster
-- *logs(...)*: Get the logs of a pod
-- *version()*: Get the Kubernetes version of this cluster
-- *create(...)*: Create this cluster
-- *delete()*: Delete this cluster
-- *reset()*: Delete this cluster (if it exists) and create it again
+- `kubectl(...)`: Execute kubectl command against this cluster (defaults to `dict` as returning format)
+- `apply(...)`: Apply resources to this cluster, either from YAML file, or Python dict
+- `load_image(...)`: Load a container image into this cluster
+- `wait(...)`: Wait for a target and a condition
+- `port_forwarding(...)`: Port forward a target
+- `logs(...)`: Get the logs of a pod
+- `version()`: Get the Kubernetes version of this cluster
+- `create(...)`: Create this cluster
+- `delete()`: Delete this cluster
+- `reset()`: Delete this cluster (if it exists) and create it again
 
 The interface provides proper typing and should be easy to work with.
 
@@ -83,8 +88,8 @@ pytest-kubernetes uses [*pytest marks*](https://docs.pytest.org/en/7.1.x/how-to/
 Currently the following settings are supported:
 
 - *provider* (str): request a specific Kubernetes provider for the test case 
-- cluster_name (str): request a specific cluster name
-- keep (bool): keep the cluster across multiple test cases
+- *cluster_name* (str): request a specific cluster name
+- *keep* (bool): keep the cluster across multiple test cases
 
 
 **Example**
@@ -115,6 +120,7 @@ def k8s_with_workload(request):
     cluster.create()
     # init the cluster with a workload
     cluster.apply("./fixtures/hello.yaml")
+    cluster.wait("deployments/hello-nginxdemo", "condition=Available=True")
     yield cluster
     cluster.delete()
 ```
