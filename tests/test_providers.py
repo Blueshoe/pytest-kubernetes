@@ -26,7 +26,13 @@ class KubernetesManagerTest:
 
     def test_b_reset_cluster(self):
         self.cluster = self.manager(self.cluster_name)
+        self.cluster.create()
+        self.cluster.kubectl(["get", "nodes"])
+        kubeconfig1 = self.cluster.kubeconfig
         self.cluster.reset()
+        kubeconfig2 = self.cluster.kubeconfig
+        self.cluster.kubectl(["get", "nodes"])
+        assert kubeconfig1 != kubeconfig2
 
     def test_c_apply_yaml_file(self):
         self.cluster.create()

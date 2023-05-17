@@ -11,6 +11,7 @@ class K3dManager(AClusterManager):
         return f"rancher/k3s:v{version}-k3s1"
 
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
+        opts = kwargs.get("options", [])
         self._exec(
             [
                 "cluster",
@@ -22,6 +23,7 @@ class K3dManager(AClusterManager):
                 "--wait",
                 f"--timeout={cluster_options.cluster_timeout}s",
             ]
+            + opts
         )
         self._exec(
             [

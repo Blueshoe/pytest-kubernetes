@@ -46,7 +46,7 @@ It provides the following interface:
 - `port_forwarding(...)`: Port forward a target
 - `logs(...)`: Get the logs of a pod
 - `version()`: Get the Kubernetes version of this cluster
-- `create(...)`: Create this cluster
+- `create(...)`: Create this cluster (pass special cluster arguments with `options: List[str]` to the CLI command)
 - `delete()`: Delete this cluster
 - `reset()`: Delete this cluster (if it exists) and create it again
 
@@ -127,6 +127,14 @@ def k8s_with_workload(request):
 In this example, the cluster remains active for the entire session and is only deleted once pytest is done.
 
 > Note that `yield` notation that is prefered by pytest to express clean up tasks for this fixture.
+
+#### Special cluster options
+You can pass more options using `kwargs['options']: List[str]` to the `create(options=...)` function when creating the cluster like so:
+```python
+    cluster = select_provider_manager("k3d")("my-cluster")
+    # bind ports of this k3d cluster
+    cluster.create(options=["--agents", "1", "-p", "8080:80@agent:0", "-p", "31820:31820/UDP@agent:0"])
+```
 
 ## Examples
 Please find more examples in *tests/vendor.py* in this repository. These test cases are written as users of pytest-kubernetes would write test cases in their projects.

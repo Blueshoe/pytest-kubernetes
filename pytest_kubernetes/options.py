@@ -8,4 +8,4 @@ class ClusterOptions:
     api_version: str = field(default="1.25.3")
     # nodes: int = None
     kubeconfig_path: Optional[Path] = None
-    cluster_timeout: int = field(default=120)
+    cluster_timeout: int = field(default=240)
