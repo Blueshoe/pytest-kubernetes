@@ -8,6 +8,7 @@ class KindManager(AClusterManager):
         return "kind"
 
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
+        opts = kwargs.get("options", [])
         _ = self._exec(
             [
                 "create",
@@ -18,7 +19,7 @@ class KindManager(AClusterManager):
                 str(cluster_options.kubeconfig_path),
                 "--image",
                 f"kindest/node:v{cluster_options.api_version}",
-            ]
+            ] + opts
         )
 
     def _on_delete(self) -> None:

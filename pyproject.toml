@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "pytest-kubernetes"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
 readme = "README.md"
 packages = [{include = "pytest_kubernetes"}]
+repository = "https://github.com/Blueshoe/pytest-kubernetes"
 classifiers = [
     "Framework :: Pytest",
     "Topic :: Software Development :: Testing",

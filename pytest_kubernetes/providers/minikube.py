@@ -16,6 +16,7 @@ class MinikubeManager(AClusterManager):
 
 class MinikubeKVM2Manager(MinikubeManager):
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
+        opts = kwargs.get("options", [])
         self._exec(
             [
                 "start",
@@ -26,13 +27,14 @@ class MinikubeKVM2Manager(MinikubeManager):
                 "--embed-certs",
                 "--kubernetes-version",
                 f"v{cluster_options.api_version}",
-            ],
+            ] + opts,
             additional_env={"KUBECONFIG": str(cluster_options.kubeconfig_path)},
         )
 
 
 class MinikubeDockerManager(MinikubeManager):
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
+        opts = kwargs.get("options", [])
         self._exec(
             [
                 "start",
@@ -43,6 +45,6 @@ class MinikubeDockerManager(MinikubeManager):
                 "--embed-certs",
                 "--kubernetes-version",
                 f"v{cluster_options.api_version}",
-            ],
+            ] + opts,
             additional_env={"KUBECONFIG": str(cluster_options.kubeconfig_path)},
         )

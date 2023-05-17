@@ -77,7 +77,7 @@ def test_e_kept_cluster_delete(k8s: AClusterManager):
     assert configmap["metadata"]["uid"] is not None
 
     k8s.reset()
-    with pytest.raises(subprocess.CalledProcessError):
+    with pytest.raises(RuntimeError):
         configmap = k8s.kubectl(["get", "configmap", "myconfigmap"])
 
     k8s.delete()
@@ -116,7 +116,7 @@ def test_g_prepopulated_cluster_kept(k8s_with_workload: AClusterManager):
     )
     assert "k3d-pytest-my-cluster" in process.stdout
     k8s.reset()
-    with pytest.raises(subprocess.CalledProcessError):
+    with pytest.raises(RuntimeError):
         k8s.kubectl(["get", "deployment", "hello-nginxdemo"])
 
 

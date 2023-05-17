@@ -223,6 +223,7 @@ class AClusterManager(ABC):
         self._on_delete()
         if self.kubeconfig:
             self.kubeconfig.unlink(missing_ok=True)
+            self._cluster_options.kubeconfig_path = None
         sleep(1)
 
     def reset(self) -> None:
