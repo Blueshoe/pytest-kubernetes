@@ -74,7 +74,15 @@ class Kubectl:
     ) -> Union[Dict, str]:
         if as_dict:
             args += ["-o", "json"]
-        proc = self._exec(args, timeout=timeout)
+        try:
+            proc = self._exec(args, timeout=timeout)
+        except RuntimeError as e:
+            if as_dict and "unknown shorthand flag" in str(e):
+                raise RuntimeError(
+                    "Cannot parse kubectl command into Dict. Please use kubectl([..], as_dict=False) to return a string"
+                ) from None
+            else:
+                raise e
         output: str = proc.stdout.decode("utf-8")
         if as_dict:
             return json.loads(output)  # type: ignore

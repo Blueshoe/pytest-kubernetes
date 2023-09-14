@@ -27,7 +27,8 @@ class MinikubeKVM2Manager(MinikubeManager):
                 "--embed-certs",
                 "--kubernetes-version",
                 f"v{cluster_options.api_version}",
-            ] + opts,
+            ]
+            + opts,
             additional_env={"KUBECONFIG": str(cluster_options.kubeconfig_path)},
         )
 
@@ -45,6 +46,7 @@ class MinikubeDockerManager(MinikubeManager):
                 "--embed-certs",
                 "--kubernetes-version",
                 f"v{cluster_options.api_version}",
-            ] + opts,
+            ]
+            + opts,
             additional_env={"KUBECONFIG": str(cluster_options.kubeconfig_path)},
         )

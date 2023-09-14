@@ -19,7 +19,8 @@ class KindManager(AClusterManager):
                 str(cluster_options.kubeconfig_path),
                 "--image",
                 f"kindest/node:v{cluster_options.api_version}",
-            ] + opts
+            ]
+            + opts
         )
 
     def _on_delete(self) -> None:

@@ -192,7 +192,10 @@ class AClusterManager(ABC):
         return int(data["serverVersion"]["major"]), int(data["serverVersion"]["minor"])  # type: ignore
 
     def create(
-        self, cluster_options: Optional[ClusterOptions] = None, **kwargs
+        self,
+        cluster_options: Optional[ClusterOptions] = None,
+        timeout: int = 20,
+        **kwargs,
     ) -> None:
         """Create this cluster"""
         self._cluster_options = cluster_options or self._cluster_options
@@ -203,11 +206,13 @@ class AClusterManager(ABC):
         self._on_create(self._cluster_options, **kwargs)
         _i = 0
         # check if this cluster is ready: readyz check passed and default service account is available
-        while _i < 20:
+        while _i < timeout:
             sleep(1)
             try:
                 ready = self.kubectl(["get", "--raw='/readyz?verbose'"], as_dict=False)
-                sa_available = self.kubectl(["get", "sa", "default"], as_dict=False)
+                sa_available = self.kubectl(
+                    ["get", "sa", "default", "-n", "default"], as_dict=False
+                )
             except RuntimeError:
                 _i += 1
                 continue
@@ -216,7 +221,9 @@ class AClusterManager(ABC):
             else:
                 _i += 1
         else:
-            raise RuntimeError(f"Cluster '{self.cluster_name}' is not ready")
+            raise RuntimeError(
+                f"Cluster '{self.cluster_name}' is not ready. Readyz: {ready}, SA: {sa_available}"
+            )
 
     def delete(self) -> None:
         """Delete this cluster"""
