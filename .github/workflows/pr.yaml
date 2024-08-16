@@ -1,0 +1,38 @@
+name: CI
+on:
+  - pull_request
+jobs:
+  # minikube:
+  #   runs-on: ubuntu-latest
+  #   name: build example and deploy to minikube
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Start minikube
+  #     uses: medyagh/setup-minikube@latest
+  #   - name: Run Tests
+  #     run: pytest -k Testkind
+  kind:
+    runs-on: ubuntu-latest
+    name: Test Kind plugin
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry Action
+        uses: snok/install-poetry@v1.4.1
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1
+      - name: Run Tests
+        run: poetry run pytest -k Testkind -v
