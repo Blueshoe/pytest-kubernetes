@@ -4,13 +4,19 @@ from typing import Type
 
 import pytest
 
-from pytest_kubernetes.providers.base import AClusterManager
-from pytest_kubernetes.providers import *
+from pytest_kubernetes.providers import (
+    AClusterManager,
+    K3dManager,
+    KindManager,
+    MinikubeDockerManager,
+    MinikubeKVM2Manager,
+    select_provider_manager,
+)
 
 
 class KubernetesManagerTest:
-    manager: Type[AClusterManager] = None
-    cluster: AClusterManager = None
+    manager: Type[AClusterManager] | None = None
+    cluster: AClusterManager | None = None
     cluster_name = "pytest"
 
     def test_a_create_simple_cluster(self):
@@ -107,6 +113,46 @@ class KubernetesManagerTest:
         response = urllib.request.urlopen("http://127.0.0.1:9090", timeout=20)
         assert response.status == 200
         forwarding_nginx.stop()
+
+    def test_d_logs_namespace(self):
+        self.cluster.create()
+        self.cluster.apply(
+            (Path(__file__).parent / Path("./fixtures/hello.yaml")).resolve()
+        )
+        self.cluster.wait("deployments/hello-nginxdemo", "condition=Available=True")
+
+        data = self.cluster.kubectl(["get", "deployments", "-n", "commands"])
+        assert len(data["items"]) == 1
+        assert data["items"][0]["metadata"]["name"] == "hello-nginxdemo-command"
+
+        pod_name = self.cluster.kubectl(
+            [
+                "get",
+                "pod",
+                "-n",
+                "commands",
+                "-o",
+                "jsonpath={.items[0].metadata.name}",
+            ],
+            as_dict=False,
+        )
+        assert pod_name
+
+        _i = 0
+        exception = None
+        while _i < 30:
+            sleep(1)
+            try:
+                assert 'using the "epoll" event method' in self.cluster.logs(
+                    pod=pod_name, namespace="commands"
+                )
+                break
+            except (AssertionError, KeyError) as e:
+                _i += 1
+                exception = e
+                continue
+        else:
+            raise exception
 
     def teardown_method(self, method):
         self.cluster.delete()

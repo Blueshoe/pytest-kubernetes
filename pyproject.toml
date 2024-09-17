@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pytest-kubernetes"
-version = "0.4.0"
+version = "0.5.0"
 description = ""
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
 readme = "README.md"
@@ -20,12 +20,10 @@ pytest = "^8.3.0"
 pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.1.0"
 coverage = "^7.1.0"
-flake8 = "^6.0.0"
-flake8-black = "^0.3.6"
 mypy = "^1.0.0"
 types-pyyaml = "^6.0.12.6"
+ruff = "^0.6.5"
 
 [tool.poetry.plugins.pytest11]
 pytest-kubernetes = "pytest_kubernetes.plugin"

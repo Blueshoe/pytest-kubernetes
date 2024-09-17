@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 from time import sleep
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from pytest_kubernetes.kubectl import Kubectl
 
@@ -21,8 +21,8 @@ class PortForwarding(Kubectl):
         target: str,
         ports: Tuple[int, int],
         namespace: str = "default",
-        kubeconfig: Optional[Path] = None,
-        context: Optional[str] = None,
+        kubeconfig: Path | None = None,
+        context: str | None = None,
         timeout: int = 90,
     ):
         self._target = target

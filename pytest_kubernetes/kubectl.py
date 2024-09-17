@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 import os
 from pathlib import Path
 import shutil
@@ -15,9 +15,9 @@ class Kubectl:
 
     def __init__(
         self,
-        kubeconfig: Optional[Path] = None,
-        context: Optional[str] = None,
-        command_prefix: Optional[List[str]] = None,
+        kubeconfig: Path | None = None,
+        context: str | None = None,
+        command_prefix: List[str] | None = None,
     ) -> None:
         if kubeconfig is None:
             raise RuntimeError("The kubeconfig is not set. Did you create the cluster?")
@@ -27,7 +27,7 @@ class Kubectl:
 
     @property
     def _exec_path(self) -> Path:
-        return Path(str(shutil.which("kubectl")))
+        return Path(str(shutil.which("kubectl")).strip())
 
     def _ensure_executable(self) -> None:
         if not self._exec_path:
