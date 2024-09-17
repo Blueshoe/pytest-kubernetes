@@ -20,7 +20,7 @@ pytest = "^8.3.0"
 pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.1.0"
+black = "^24.0.0"
 coverage = "^7.1.0"
 flake8 = "^6.0.0"
 flake8-black = "^0.3.6"
