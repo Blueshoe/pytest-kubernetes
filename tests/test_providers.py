@@ -4,13 +4,19 @@ from typing import Type
 
 import pytest
 
-from pytest_kubernetes.providers.base import AClusterManager
-from pytest_kubernetes.providers import *
+from pytest_kubernetes.providers import (
+    AClusterManager,
+    K3dManager,
+    KindManager,
+    MinikubeDockerManager,
+    MinikubeKVM2Manager,
+    select_provider_manager,
+)
 
 
 class KubernetesManagerTest:
-    manager: Type[AClusterManager] = None
-    cluster: AClusterManager = None
+    manager: Type[AClusterManager] | None = None
+    cluster: AClusterManager | None = None
     cluster_name = "pytest"
 
     def test_a_create_simple_cluster(self):

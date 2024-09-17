@@ -1,12 +1,12 @@
 import shutil
-from typing import Optional, Type
+from typing import Type
 from pytest_kubernetes.providers.base import AClusterManager
 from .k3d import K3dManager
 from .kind import KindManager
 from .minikube import MinikubeDockerManager, MinikubeKVM2Manager
 
 
-def select_provider_manager(name: Optional[str] = None) -> Type[AClusterManager]:
+def select_provider_manager(name: str | None = None) -> Type[AClusterManager]:
     if name:
         providers = {
             "k3d": K3dManager,

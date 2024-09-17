@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 import tempfile
 from time import sleep
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import yaml
 
@@ -83,7 +83,7 @@ class AClusterManager(ABC):
         self,
         arguments: List[str],
         additional_env: Dict[str, str] = {},
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
     ) -> subprocess.CompletedProcess:
         _timout = timeout or self._cluster_options.cluster_timeout
         proc = subprocess.run(
@@ -105,7 +105,7 @@ class AClusterManager(ABC):
         raise NotImplementedError
 
     @property
-    def kubeconfig(self) -> Optional[Path]:
+    def kubeconfig(self) -> Path | None:
         return (
             Path(self._cluster_options.kubeconfig_path)
             if self._cluster_options.kubeconfig_path
@@ -118,7 +118,7 @@ class AClusterManager(ABC):
 
     def kubectl(
         self, args: List[str], as_dict: bool = True, timeout: int = 60
-    ) -> Union[Dict, str]:
+    ) -> dict | str:
         """Execute kubectl command against this cluster"""
         return Kubectl(self.kubeconfig, self.context)(args, as_dict, timeout)
 
@@ -179,12 +179,18 @@ class AClusterManager(ABC):
         """Load a container image into this cluster"""
         raise NotImplementedError
 
-    def logs(self, pod: str, container: Optional[str] = None) -> str:
+    def logs(
+        self, pod: str, container: str | None = None, namespace: str | None = None
+    ) -> str:
         """Get the logs of a pod"""
-        return self.kubectl(  # type: ignore
-            ["logs", pod] + (["-c", container] if container else []),
-            as_dict=False,
-        )
+        args = ["logs", pod]
+
+        if namespace:
+            args.extend(["-n", namespace])
+        if container:
+            args.extend(["-c", container])
+
+        return self.kubectl(args, as_dict=False)  # type: ignore
 
     def version(self) -> Tuple[int, int]:
         """Get the Kubernetes version of this cluster"""
@@ -193,7 +199,7 @@ class AClusterManager(ABC):
 
     def create(
         self,
-        cluster_options: Optional[ClusterOptions] = None,
+        cluster_options: ClusterOptions | None = None,
         timeout: int = 20,
         **kwargs,
     ) -> None:
