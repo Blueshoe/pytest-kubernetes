@@ -56,8 +56,10 @@ class AClusterManager(ABC):
     cluster_name = ""
     context = None
 
-    def __init__(self, cluster_name: str) -> None:
+    def __init__(self, cluster_name: str, cluster_config: str | None = None) -> None:
         self.cluster_name = f"pytest-{cluster_name}"
+        if cluster_config:
+            self._cluster_options.cluster_config = Path(cluster_config)
         self._ensure_executable()
 
     @classmethod
@@ -212,12 +214,18 @@ class AClusterManager(ABC):
         self._on_create(self._cluster_options, **kwargs)
         _i = 0
         # check if this cluster is ready: readyz check passed and default service account is available
+        ready = "Nope"
+        sa_available = "Nope"
         while _i < timeout:
             sleep(1)
             try:
-                ready = self.kubectl(["get", "--raw='/readyz?verbose'"], as_dict=False)
-                sa_available = self.kubectl(
-                    ["get", "sa", "default", "-n", "default"], as_dict=False
+                ready = str(
+                    self.kubectl(["get", "--raw='/readyz?verbose'"], as_dict=False)
+                )
+                sa_available = str(
+                    self.kubectl(
+                        ["get", "sa", "default", "-n", "default"], as_dict=False
+                    )
                 )
             except RuntimeError:
                 _i += 1

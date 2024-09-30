@@ -1,5 +1,8 @@
 from pytest_kubernetes.providers.base import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
+import subprocess
+import yaml
+import re
 
 
 class K3dManager(AClusterManager):
@@ -7,15 +10,38 @@ class K3dManager(AClusterManager):
     def get_binary_name(self) -> str:
         return "k3d"
 
+    @classmethod
+    def get_k3d_version(self) -> str:
+        version_proc = subprocess.run(
+            "k3d --version",
+            shell=True,
+            capture_output=True,
+            check=True,
+            timeout=10,
+        )
+        version_match = re.match(
+            r"k3d version v(\d+\.\d+\.\d+)", version_proc.stdout.decode()
+        )
+        if not version_match:
+            return "0.0.0"
+        return version_match.group(1)
+
     def _translate_version(self, version: str) -> str:
         return f"rancher/k3s:v{version}-k3s1"
 
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
         opts = kwargs.get("options", [])
-        self._exec(
-            [
-                "cluster",
-                "create",
+
+        # see https://k3d.io/v5.1.0/usage/configfile/
+        if cluster_options.cluster_config and K3dManager.get_k3d_version() >= "4.0.0":
+            opts += [
+                "--config",
+                str(cluster_options.cluster_config),
+            ]
+            config_yaml = yaml.safe_load(cluster_options.cluster_config.read_text())
+        else:
+            opts += [
+                "--name",
                 self.cluster_name,
                 "--kubeconfig-update-default=0",
                 "--image",
@@ -23,13 +49,19 @@ class K3dManager(AClusterManager):
                 "--wait",
                 f"--timeout={cluster_options.cluster_timeout}s",
             ]
+
+        self._exec(
+            [
+                "cluster",
+                "create",
+            ]
             + opts
         )
         self._exec(
             [
                 "kubeconfig",
                 "get",
-                self.cluster_name,
+                self.cluster_name if not config_yaml else config_yaml["name"],
                 ">",
                 str(cluster_options.kubeconfig_path),
             ]

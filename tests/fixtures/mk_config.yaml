@@ -1,0 +1,10 @@
+cluster:
+  profile: pytest-mk-cluster
+  # config options have to be named the same as in the minikube config docs
+  configs:
+    - name: driver
+      value: kvm2
+    - name: EmbedCerts
+      value: true
+    - name: kubernetes-version
+      value: "v1.25.3"
