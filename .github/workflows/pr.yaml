@@ -35,4 +35,4 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1
       - name: Run Tests with kind
-        run: poetry run pytest -k test_custom_cluster_config -v
+        run: poetry run pytest -k Testkind -v
