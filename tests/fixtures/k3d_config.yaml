@@ -1,0 +1,3 @@
+apiVersion: k3d.io/v1alpha3
+kind: Simple
+name: pytest-k3d-cluster

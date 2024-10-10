@@ -1,5 +1,6 @@
 from typing import Dict, Type
 import pytest
+from pytest import FixtureRequest
 
 from pytest_kubernetes.providers import select_provider_manager
 from pytest_kubernetes.providers.base import AClusterManager
@@ -8,7 +9,7 @@ cluster_cache: Dict[str, Type[AClusterManager]] = {}
 
 
 @pytest.fixture
-def k8s(request):
+def k8s(request: FixtureRequest):
     """Provide a Kubernetes cluster as test fixture."""
 
     provider = None
@@ -19,6 +20,7 @@ def k8s(request):
         provider = req.get("provider")
         cluster_name = req.get("cluster_name") or cluster_name
         keep = req.get("keep")
+        cluster_config = req.get("cluster_config")
     if not provider:
         provider = provider = request.config.getoption("k8s_provider")
     if not cluster_name:
@@ -31,7 +33,7 @@ def k8s(request):
         manager = cluster_cache[cache_key]
         del cluster_cache[cache_key]
     else:
-        manager: AClusterManager = manager_klass(cluster_name)
+        manager: AClusterManager = manager_klass(cluster_name, cluster_config)
 
     def delete_cluster():
         manager.delete()
@@ -52,17 +54,21 @@ def remaining_clusters_teardown():
 
 
 def pytest_addoption(parser):
-    group = parser.getgroup("k8s")
-    group.addoption(
+    k8s_group = parser.getgroup("k8s")
+    k8s_group.addoption(
         "--k8s-cluster-name",
         default="pytest",
         help="Name of the Kubernetes cluster (default 'pytest').",
     )
-    group.addoption(
+    k8s_group.addoption(
         "--k8s-provider",
         help="The default cluster provider; selects k3d, kind, minikube depending on what is available",
     )
-    group.addoption(
+    k8s_group.addoption(
         "--k8s-version",
         help="The default cluster provider; selects k3d, kind, minikube depending on what is available",
+    )
+    k8s_group.addoption(
+        "--k8s-cluster-config",
+        help="Path to a Provider cluster config file",
     )
