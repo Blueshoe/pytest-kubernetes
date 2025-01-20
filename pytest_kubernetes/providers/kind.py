@@ -9,16 +9,29 @@ class KindManager(AClusterManager):
 
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
         opts = kwargs.get("options", [])
-        _ = self._exec(
-            [
-                "create",
-                "cluster",
+
+        # see https://kind.sigs.k8s.io/docs/user/configuration/#getting-started
+        if cluster_options.cluster_config:
+            opts += [
+                "--config",
+                str(cluster_options.cluster_config),
+                "--kubeconfig",
+                str(cluster_options.kubeconfig_path),
+            ]
+        else:
+            opts += [
                 "--name",
                 self.cluster_name,
                 "--kubeconfig",
                 str(cluster_options.kubeconfig_path),
                 "--image",
                 f"kindest/node:v{cluster_options.api_version}",
+            ]
+
+        _ = self._exec(
+            [
+                "create",
+                "cluster",
             ]
             + opts
         )
