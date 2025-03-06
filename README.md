@@ -128,6 +128,23 @@ In this example, the cluster remains active for the entire session and is only d
 
 > Note that `yield` notation that is prefered by pytest to express clean up tasks for this fixture.
 
+#### Cluster configs
+You can pass a cluster config file in the create method of a cluster:
+```python
+    cluster = select_provider_manager("k3d")("my-cluster")
+    # bind ports of this k3d cluster
+    cluster.create(
+        cluster_options=ClusterOptions(
+            cluster_config=Path("my_cluster_config.yaml")
+        )
+    )
+```
+For the different providers you have to submit different kinds of configuration files.
+- kind: https://kind.sigs.k8s.io/docs/user/configuration/#getting-started
+- k3d: https://k3d.io/v5.1.0/usage/configfile/
+- minikube: Has to be a custom yaml file that corresponds to the `minikube config` command. An example can be found in the [fixtures directory](https://github.com/Blueshoe/pytest-kubernetes/tree/main/tests/fixtures/mk_config.yaml) of this repository.
+
+
 #### Special cluster options
 You can pass more options using `kwargs['options']: List[str]` to the `create(options=...)` function when creating the cluster like so:
 ```python
@@ -135,6 +152,7 @@ You can pass more options using `kwargs['options']: List[str]` to the `create(op
     # bind ports of this k3d cluster
     cluster.create(options=["--agents", "1", "-p", "8080:80@agent:0", "-p", "31820:31820/UDP@agent:0"])
 ```
+
 
 ## Examples
 Please find more examples in *tests/vendor.py* in this repository. These test cases are written as users of pytest-kubernetes would write test cases in their projects.
