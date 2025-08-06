@@ -11,10 +11,10 @@ class KindManager(AClusterManager):
         opts = kwargs.get("options", [])
 
         # see https://kind.sigs.k8s.io/docs/user/configuration/#getting-started
-        if cluster_options.cluster_config:
+        if cluster_options.provider_config:
             opts += [
                 "--config",
-                str(cluster_options.cluster_config),
+                str(cluster_options.provider_config),
                 "--kubeconfig",
                 str(cluster_options.kubeconfig_path),
             ]

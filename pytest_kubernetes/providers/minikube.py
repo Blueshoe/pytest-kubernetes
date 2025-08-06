@@ -19,17 +19,17 @@ class MinikubeKVM2Manager(MinikubeManager):
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
         opts = kwargs.get("options", [])
 
-        if cluster_options.cluster_config:
-            config_yaml = yaml.safe_load(cluster_options.cluster_config.read_text())
+        if cluster_options.provider_config:
+            config_yaml = yaml.safe_load(cluster_options.provider_config.read_text())
             try:
-                for config in config_yaml["cluster"]["configs"]:
+                for config in config_yaml["configs"]:
                     self._exec(
                         [
                             "config",
                             config["name"],
                             f"{config['value']}",
                             "-p",
-                            f"{config_yaml['cluster']['profile']}",
+                            f"{config_yaml['name']}",
                         ],
                         additional_env={
                             "KUBECONFIG": str(cluster_options.kubeconfig_path)
@@ -63,17 +63,17 @@ class MinikubeDockerManager(MinikubeManager):
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
         opts = kwargs.get("options", [])
 
-        if cluster_options.cluster_config:
-            config_yaml = yaml.safe_load(cluster_options.cluster_config.read_text())
+        if cluster_options.provider_config:
+            config_yaml = yaml.safe_load(cluster_options.provider_config.read_text())
             try:
-                for config in config_yaml["cluster"]["configs"]:
+                for config in config_yaml["configs"]:
                     self._exec(
                         [
                             "config",
                             config["name"],
                             f"{config['value']}",
                             "-p",
-                            f"{config_yaml['cluster']['profile']}",
+                            f"{config_yaml['name']}",
                         ],
                         additional_env={
                             "KUBECONFIG": str(cluster_options.kubeconfig_path)
@@ -96,9 +96,7 @@ class MinikubeDockerManager(MinikubeManager):
             [
                 "start",
                 "-p",
-                self.cluster_name
-                if not config_yaml
-                else config_yaml["cluster"]["profile"],
+                self.cluster_name,
             ]
             + opts,
             additional_env={"KUBECONFIG": str(cluster_options.kubeconfig_path)},

@@ -168,7 +168,7 @@ class Testk3d(KubernetesManagerTest):
     def test_custom_cluster_config(self):
         self.cluster.create(
             cluster_options=ClusterOptions(
-                cluster_config=Path(__file__).parent
+                provider_config=Path(__file__).parent
                 / Path("./fixtures/k3d_config.yaml"),
             )
         )
@@ -185,7 +185,7 @@ class Testkind(KubernetesManagerTest):
     def test_custom_cluster_config(self):
         self.cluster.create(
             cluster_options=ClusterOptions(
-                cluster_config=Path(__file__).parent
+                provider_config=Path(__file__).parent
                 / Path("./fixtures/kind_config.yaml"),
             )
         )
@@ -202,7 +202,7 @@ class TestDockerminikube(KubernetesManagerTest):
     def test_custom_cluster_config(self):
         self.cluster.create(
             cluster_options=ClusterOptions(
-                cluster_config=Path(__file__).parent
+                provider_config=Path(__file__).parent
                 / Path("./fixtures/mk_config.yaml"),
             )
         )

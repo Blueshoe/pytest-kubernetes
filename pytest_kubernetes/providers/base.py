@@ -56,10 +56,20 @@ class AClusterManager(ABC):
     cluster_name = ""
     context = None
 
-    def __init__(self, cluster_name: str, cluster_config: str | None = None) -> None:
-        self.cluster_name = f"pytest-{cluster_name}"
-        if cluster_config:
-            self._cluster_options.cluster_config = Path(cluster_config)
+    def __init__(self, cluster_name: str, provider_config: str | None = None) -> None:
+        config_yaml = None
+
+        if provider_config:
+            self._cluster_options.provider_config = Path(provider_config)
+            config_yaml = yaml.safe_load(
+                self._cluster_options.provider_config.read_text()
+            )
+
+        if config_yaml:
+            self.cluster_name = config_yaml.get("name", f"pytest-{cluster_name}")
+        else:
+            self.cluster_name = f"pytest-{cluster_name}"
+
         self._ensure_executable()
 
     @classmethod

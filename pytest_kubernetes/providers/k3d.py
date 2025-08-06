@@ -1,7 +1,6 @@
 from pytest_kubernetes.providers.base import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
 import subprocess
-import yaml
 import re
 
 
@@ -33,12 +32,11 @@ class K3dManager(AClusterManager):
         opts = kwargs.get("options", [])
 
         # see https://k3d.io/v5.1.0/usage/configfile/
-        if cluster_options.cluster_config and K3dManager.get_k3d_version() >= "4.0.0":
+        if cluster_options.provider_config and K3dManager.get_k3d_version() >= "4.0.0":
             opts += [
                 "--config",
-                str(cluster_options.cluster_config),
+                str(cluster_options.provider_config),
             ]
-            config_yaml = yaml.safe_load(cluster_options.cluster_config.read_text())
         else:
             opts += [
                 "--name",
@@ -61,7 +59,7 @@ class K3dManager(AClusterManager):
             [
                 "kubeconfig",
                 "get",
-                self.cluster_name if not config_yaml else config_yaml["name"],
+                self.cluster_name,
                 ">",
                 str(cluster_options.kubeconfig_path),
             ]
