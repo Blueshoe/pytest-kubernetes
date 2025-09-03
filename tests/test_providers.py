@@ -4,6 +4,7 @@ from typing import Type
 
 import pytest
 
+from pytest_kubernetes.options import ClusterOptions
 from pytest_kubernetes.providers import (
     AClusterManager,
     K3dManager,
@@ -164,13 +165,52 @@ class KubernetesManagerTest:
 class Testk3d(KubernetesManagerTest):
     manager = K3dManager
 
+    def test_custom_cluster_config(self):
+        self.cluster.create(
+            cluster_options=ClusterOptions(
+                provider_config=Path(__file__).parent
+                / Path("./fixtures/k3d_config.yaml"),
+            )
+        )
+        cluster_name = self.cluster.kubectl(
+            ["config", "view", "--minify", "-o", "jsonpath='{.clusters[].name}'"],
+            as_dict=False,
+        )
+        assert cluster_name == "k3d-pytest-k3d-cluster"
+
 
 class Testkind(KubernetesManagerTest):
     manager = KindManager
 
+    def test_custom_cluster_config(self):
+        self.cluster.create(
+            cluster_options=ClusterOptions(
+                provider_config=Path(__file__).parent
+                / Path("./fixtures/kind_config.yaml"),
+            )
+        )
+        cluster_name = self.cluster.kubectl(
+            ["config", "view", "--minify", "-o", "jsonpath='{.clusters[].name}'"],
+            as_dict=False,
+        )
+        assert cluster_name == "kind-pytest-kind-cluster"
+
 
 class TestDockerminikube(KubernetesManagerTest):
     manager = MinikubeDockerManager
+
+    def test_custom_cluster_config(self):
+        self.cluster.create(
+            cluster_options=ClusterOptions(
+                provider_config=Path(__file__).parent
+                / Path("./fixtures/mk_config.yaml"),
+            )
+        )
+        cluster_name = self.cluster.kubectl(
+            ["config", "view", "--minify", "-o", "jsonpath='{.clusters[].name}'"],
+            as_dict=False,
+        )
+        assert cluster_name == "pytest-mk-cluster"
 
 
 class TestKVM2minikube(KubernetesManagerTest):

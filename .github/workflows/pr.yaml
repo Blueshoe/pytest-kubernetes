@@ -34,5 +34,5 @@ jobs:
         run: poetry install --no-interaction --no-root
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1
-      - name: Run Tests
+      - name: Run Tests with kind
         run: poetry run pytest -k Testkind -v

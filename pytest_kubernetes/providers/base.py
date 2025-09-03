@@ -56,9 +56,23 @@ class AClusterManager(ABC):
     cluster_name = ""
     context = None
 
-    def __init__(self, cluster_name: str) -> None:
-        self.cluster_name = f"pytest-{cluster_name}"
+    def __init__(self, cluster_name: str, provider_config: str | None = None) -> None:
+        self._set_cluster_name(cluster_name, provider_config)
         self._ensure_executable()
+
+    def _set_cluster_name(self, cluster_name, provider_config) -> str:
+        config_yaml = None
+        if provider_config:
+            self._cluster_options.provider_config = Path(provider_config)
+            config_yaml = yaml.safe_load(
+                self._cluster_options.provider_config.read_text()
+            )
+
+        if config_yaml:
+            self.cluster_name = config_yaml.get("name", f"pytest-{cluster_name}")
+        else:
+            self.cluster_name = f"pytest-{cluster_name}"
+        return self.cluster_name
 
     @classmethod
     @abstractmethod
@@ -209,15 +223,26 @@ class AClusterManager(ABC):
             tmp_kubeconfig = tempfile.NamedTemporaryFile(delete=False)
             tmp_kubeconfig.close()
             self._cluster_options.kubeconfig_path = Path(tmp_kubeconfig.name)
+        # since we allow passing provider_configs in this method, we have to adapte the cluster name here
+        if self._cluster_options.provider_config:
+            self._set_cluster_name(
+                self.cluster_name, self._cluster_options.provider_config
+            )
         self._on_create(self._cluster_options, **kwargs)
         _i = 0
         # check if this cluster is ready: readyz check passed and default service account is available
+        ready = "Nope"
+        sa_available = "Nope"
         while _i < timeout:
             sleep(1)
             try:
-                ready = self.kubectl(["get", "--raw='/readyz?verbose'"], as_dict=False)
-                sa_available = self.kubectl(
-                    ["get", "sa", "default", "-n", "default"], as_dict=False
+                ready = str(
+                    self.kubectl(["get", "--raw='/readyz?verbose'"], as_dict=False)
+                )
+                sa_available = str(
+                    self.kubectl(
+                        ["get", "sa", "default", "-n", "default"], as_dict=False
+                    )
                 )
             except RuntimeError:
                 _i += 1
