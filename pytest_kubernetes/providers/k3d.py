@@ -33,20 +33,43 @@ class K3dManager(AClusterManager):
 
         # see https://k3d.io/v5.1.0/usage/configfile/
         if cluster_options.provider_config and K3dManager.get_k3d_version() >= "4.0.0":
+            if not self.cluster_name:
+                with open(cluster_options.provider_config, "r") as config:
+                    content = config.read()
+                    if match := re.search(
+                        r"name: ([\w+\-]*)", content, flags=re.IGNORECASE
+                    ):
+                        self.cluster_name = match.groups()[0]
+                    else:
+                        self.cluster_name = "k3s-default"
+
             opts += [
                 "--config",
                 str(cluster_options.provider_config),
-            ]
-        else:
-            opts += [
-                "--name",
-                self.cluster_name,
                 "--kubeconfig-update-default=0",
-                "--image",
-                self._translate_version(cluster_options.api_version),
                 "--wait",
                 f"--timeout={cluster_options.cluster_timeout}s",
             ]
+        else:
+            if K3dManager.get_k3d_version() < "4.0.0":
+                opts += [
+                    "--name",
+                    self.cluster_name,
+                    "--kubeconfig-update-default=0",
+                    "--image",
+                    self._translate_version(cluster_options.api_version),
+                    "--wait",
+                    f"--timeout={cluster_options.cluster_timeout}s",
+                ]
+            else:
+                opts += [
+                    self.cluster_name,
+                    "--kubeconfig-update-default=0",
+                    "--image",
+                    self._translate_version(cluster_options.api_version),
+                    "--wait",
+                    f"--timeout={cluster_options.cluster_timeout}s",
+                ]
 
         self._exec(
             [

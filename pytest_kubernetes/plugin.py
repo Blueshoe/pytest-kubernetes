@@ -15,11 +15,12 @@ def k8s(request: FixtureRequest):
     provider = None
     cluster_name = None
     keep = False
+    provider_config = None
     if "k8s" in request.keywords:
         req = dict(request.keywords["k8s"].kwargs)
         provider = req.get("provider")
         cluster_name = req.get("cluster_name") or cluster_name
-        keep = req.get("keep")
+        keep = req.get("keep", False)
         provider_config = req.get("provider_config")
     if not provider:
         provider = provider = request.config.getoption("k8s_provider")
@@ -33,7 +34,7 @@ def k8s(request: FixtureRequest):
         manager = cluster_cache[cache_key]
         del cluster_cache[cache_key]
     else:
-        manager: AClusterManager = manager_klass(cluster_name, provider_config)
+        manager: AClusterManager = manager_klass(cluster_name, provider_config)  # type: ignore
 
     def delete_cluster():
         manager.delete()

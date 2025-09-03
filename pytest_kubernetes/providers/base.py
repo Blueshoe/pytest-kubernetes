@@ -57,8 +57,11 @@ class AClusterManager(ABC):
     context = None
 
     def __init__(self, cluster_name: str, provider_config: str | None = None) -> None:
-        config_yaml = None
+        self._set_cluster_name(cluster_name, provider_config)
+        self._ensure_executable()
 
+    def _set_cluster_name(self, cluster_name, provider_config) -> str:
+        config_yaml = None
         if provider_config:
             self._cluster_options.provider_config = Path(provider_config)
             config_yaml = yaml.safe_load(
@@ -69,8 +72,7 @@ class AClusterManager(ABC):
             self.cluster_name = config_yaml.get("name", f"pytest-{cluster_name}")
         else:
             self.cluster_name = f"pytest-{cluster_name}"
-
-        self._ensure_executable()
+        return self.cluster_name
 
     @classmethod
     @abstractmethod
@@ -221,6 +223,11 @@ class AClusterManager(ABC):
             tmp_kubeconfig = tempfile.NamedTemporaryFile(delete=False)
             tmp_kubeconfig.close()
             self._cluster_options.kubeconfig_path = Path(tmp_kubeconfig.name)
+        # since we allow passing provider_configs in this method, we have to adapte the cluster name here
+        if self._cluster_options.provider_config:
+            self._set_cluster_name(
+                self.cluster_name, self._cluster_options.provider_config
+            )
         self._on_create(self._cluster_options, **kwargs)
         _i = 0
         # check if this cluster is ready: readyz check passed and default service account is available
