@@ -7,12 +7,13 @@ import pytest
 from pytest_kubernetes.options import ClusterOptions
 from pytest_kubernetes.providers import (
     AClusterManager,
-    K3dManager,
+    K3dManagerBase,
     KindManager,
     MinikubeDockerManager,
     MinikubeKVM2Manager,
     select_provider_manager,
 )
+from pytest_kubernetes.providers.external import ExternalManagerBase
 
 
 class KubernetesManagerTest:
@@ -163,7 +164,7 @@ class KubernetesManagerTest:
 
 
 class Testk3d(KubernetesManagerTest):
-    manager = K3dManager
+    manager = K3dManagerBase
 
     def test_custom_cluster_config(self):
         self.cluster.create(
@@ -217,12 +218,35 @@ class TestKVM2minikube(KubernetesManagerTest):
     manager = MinikubeKVM2Manager
 
 
+class TestExternal(KubernetesManagerTest):
+    manager = ExternalManagerBase
+
+    def setup_method(self, method):
+        # create an external cluster, locally
+        k3d = select_provider_manager("k3d")("pytest-external")
+        k3d.create()
+        k3d.kubeconfig
+        self.cluster = self.manager("pytest-external", str(k3d.kubeconfig))
+
+    def teardown_method(self, method):
+        k3d = select_provider_manager("k3d")("pytest-external")
+        k3d.delete()
+
+
+def test_k8s_manager(k8s_manager):
+    my_provider: AClusterManager = k8s_manager()
+    print(my_provider)
+    provider = my_provider()
+    print(provider.cluster_name)
+    print(provider.kubeconfig)
+
+
 def test_select_provider(monkeypatch):
     provider_klass = select_provider_manager()
     assert issubclass(provider_klass, AClusterManager)
 
     k3d_klass = select_provider_manager("k3d")
-    assert k3d_klass == K3dManager
+    assert k3d_klass == K3dManagerBase
     minikube_klass = select_provider_manager("minikube")
     assert minikube_klass == MinikubeDockerManager
     minikube_klass = select_provider_manager("minikube-docker")
@@ -230,9 +254,9 @@ def test_select_provider(monkeypatch):
     minikube_klass = select_provider_manager("minikube-kvm2")
     assert minikube_klass == MinikubeKVM2Manager
     # if k3d is not available
-    monkeypatch.setattr(K3dManager, "get_binary_name", lambda: "k3dlol")
+    monkeypatch.setattr(K3dManagerBase, "get_binary_name", lambda: "k3dlol")
     provider_klass = select_provider_manager()
-    assert provider_klass != K3dManager
+    assert provider_klass != K3dManagerBase
 
     with pytest.raises(RuntimeError):
         _ = select_provider_manager("rofl")

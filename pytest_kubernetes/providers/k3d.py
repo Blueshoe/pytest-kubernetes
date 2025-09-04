@@ -4,7 +4,7 @@ import subprocess
 import re
 
 
-class K3dManager(AClusterManager):
+class K3dManagerBase(AClusterManager):
     @classmethod
     def get_binary_name(self) -> str:
         return "k3d"
@@ -32,7 +32,10 @@ class K3dManager(AClusterManager):
         opts = kwargs.get("options", [])
 
         # see https://k3d.io/v5.1.0/usage/configfile/
-        if cluster_options.provider_config and K3dManager.get_k3d_version() >= "4.0.0":
+        if (
+            cluster_options.provider_config
+            and K3dManagerBase.get_k3d_version() >= "4.0.0"
+        ):
             if not self.cluster_name:
                 with open(cluster_options.provider_config, "r") as config:
                     content = config.read()
@@ -51,7 +54,7 @@ class K3dManager(AClusterManager):
                 f"--timeout={cluster_options.cluster_timeout}s",
             ]
         else:
-            if K3dManager.get_k3d_version() < "4.0.0":
+            if K3dManagerBase.get_k3d_version() < "4.0.0":
                 opts += [
                     "--name",
                     self.cluster_name,
