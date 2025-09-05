@@ -58,7 +58,7 @@ def remaining_clusters_teardown():
         cluster.delete()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def k8s_manager(request: FixtureRequest):
     pytest_options = {
         "cluster_name": request.config.getoption("k8s_cluster_name"),
