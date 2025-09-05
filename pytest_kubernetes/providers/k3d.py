@@ -36,16 +36,6 @@ class K3dManagerBase(AClusterManager):
             cluster_options.provider_config
             and K3dManagerBase.get_k3d_version() >= "4.0.0"
         ):
-            if not self.cluster_name:
-                with open(cluster_options.provider_config, "r") as config:
-                    content = config.read()
-                    if match := re.search(
-                        r"name: ([\w+\-]*)", content, flags=re.IGNORECASE
-                    ):
-                        self.cluster_name = match.groups()[0]
-                    else:
-                        self.cluster_name = "k3s-default"
-
             opts += [
                 "--config",
                 str(cluster_options.provider_config),

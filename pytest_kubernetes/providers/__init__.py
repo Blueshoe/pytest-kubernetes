@@ -1,17 +1,26 @@
 import shutil, sys, argparse
 from typing import Type
+from pytest_kubernetes.options import ClusterOptions
 from pytest_kubernetes.providers.base import AClusterManager
 from .k3d import K3dManagerBase
-from .kind import KindManager
-from .minikube import MinikubeDockerManager, MinikubeKVM2Manager
+from .kind import KindManagerBase
+from .minikube import MinikubeDockerManagerBase, MinikubeKVM2ManagerBase
 from .external import ExternalManagerBase
+
+
+K3D = "k3d"
+KIND = "kind"
+MINIKUBE = "minikube"
+MINIKUBE_DOCKER = "minikube-docker"
+MINIKUBE_KVM = "minikube-kvm2"
+EXTERNAL = "external"
 
 
 def select_provider_manager(
     name: str | None = None, pytest_options: dict | None = None
 ) -> Type[AClusterManager]:
     kubeconfig = None
-    cluster_name = ""
+    cluster_options = ClusterOptions()
 
     if pytest_options and name and name.lower() == "external":
         kubeconfig = pytest_options.get("kubeconfig")
@@ -24,22 +33,40 @@ def select_provider_manager(
         name = "external"
         kubeconfig = pytest_options.get("kubeconfig_override")
 
+    # init with defaults from pytest args
     if pytest_options and pytest_options.get("cluster_name"):
-        cluster_name = pytest_options.get("cluster_name")
+        cluster_options.cluster_name = pytest_options.get("cluster_name")
+    if pytest_options and pytest_options.get("version"):
+        cluster_options.version = pytest_options.get("version")
+
+    providers = {
+        K3D: type(
+            "K3dManager", (K3dManagerBase,), {"_cluster_options": cluster_options}
+        ),
+        KIND: type(
+            "KindManager", (KindManagerBase,), {"_cluster_options": cluster_options}
+        ),
+        MINIKUBE: type(
+            "MinikubeDockerManager",
+            (MinikubeDockerManagerBase,),
+            {"_cluster_options": cluster_options},
+        ),
+        MINIKUBE_DOCKER: type(
+            "MinikubeDockerManager",
+            (MinikubeDockerManagerBase,),
+            {"_cluster_options": cluster_options},
+        ),
+        MINIKUBE_KVM: type(
+            "MinikubeKVM2Manager",
+            (MinikubeKVM2ManagerBase,),
+            {"_cluster_options": cluster_options},
+        ),
+        EXTERNAL: type(
+            "ExternalManager", (ExternalManagerBase,), {"_kubeconfig": kubeconfig}
+        ),
+    }
 
     if name:
-        providers = {
-            "k3d": type(
-                "K3dManager", (K3dManagerBase,), {"cluster_name": cluster_name}
-            ),
-            "kind": KindManager,
-            "minikube": MinikubeDockerManager,
-            "minikube-docker": MinikubeDockerManager,
-            "minikube-kvm2": MinikubeKVM2Manager,
-            "external": type(
-                "ExternalManager", (ExternalManagerBase,), {"_kubeconfig": kubeconfig}
-            ),
-        }
         provider = providers.get(name.lower(), None)
         if not provider:
             raise RuntimeError(
@@ -48,7 +75,11 @@ def select_provider_manager(
         return provider
     else:
         # select a default provider
-        for provider in [K3dManagerBase, KindManager, MinikubeDockerManager]:
+        for provider in [
+            providers.get(K3D),
+            providers.get(KIND),
+            providers.get(MINIKUBE_DOCKER),
+        ]:
             if not shutil.which(provider.get_binary_name()):
                 continue
             return provider

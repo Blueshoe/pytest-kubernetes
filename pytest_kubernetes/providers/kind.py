@@ -2,7 +2,7 @@ from pytest_kubernetes.providers.base import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
 
 
-class KindManager(AClusterManager):
+class KindManagerBase(AClusterManager):
     @classmethod
     def get_binary_name(self) -> str:
         return "kind"

@@ -9,7 +9,7 @@ cluster_cache: Dict[str, Type[AClusterManager]] = {}
 
 
 @pytest.fixture
-def k8s(request: FixtureRequest):
+def k8s(request: FixtureRequest, k8s_manager):
     """Provide a Kubernetes cluster as test fixture."""
 
     provider = None
@@ -28,12 +28,8 @@ def k8s(request: FixtureRequest):
         provider = request.config.getoption("k8s_provider")
     if not cluster_name:
         cluster_name = request.config.getoption("k8s_cluster_name")
-    # if we want to override the default cluster configs and run it in an external cluster
-    if kubeconfig := request.config.getoption("k8s_kubeconfig_override"):
-        provider = "external"
-        external_kubeconfig = kubeconfig
 
-    manager_klass = select_provider_manager(provider)
+    manager_klass = k8s_manager(provider)
     cache_key = f"{manager_klass.__name__}-{cluster_name}"
     # check if this provider is kept from another test function
     if cache_key in cluster_cache:
@@ -72,7 +68,6 @@ def k8s_manager(request: FixtureRequest):
         "kubeconfig_override": request.config.getoption("k8s_kubeconfig_override"),
         "kubeconfig": request.config.getoption("k8s_kubeconfig"),
     }
-    print(pytest_options)
 
     def k8s_factory(provider_name: str | None = None):
         if not provider_name:

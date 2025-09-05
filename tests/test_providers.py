@@ -8,9 +8,9 @@ from pytest_kubernetes.options import ClusterOptions
 from pytest_kubernetes.providers import (
     AClusterManager,
     K3dManagerBase,
-    KindManager,
-    MinikubeDockerManager,
-    MinikubeKVM2Manager,
+    KindManagerBase,
+    MinikubeDockerManagerBase,
+    MinikubeKVM2ManagerBase,
     select_provider_manager,
 )
 from pytest_kubernetes.providers.external import ExternalManagerBase
@@ -181,7 +181,7 @@ class Testk3d(KubernetesManagerTest):
 
 
 class Testkind(KubernetesManagerTest):
-    manager = KindManager
+    manager = KindManagerBase
 
     def test_custom_cluster_config(self):
         self.cluster.create(
@@ -198,7 +198,7 @@ class Testkind(KubernetesManagerTest):
 
 
 class TestDockerminikube(KubernetesManagerTest):
-    manager = MinikubeDockerManager
+    manager = MinikubeDockerManagerBase
 
     def test_custom_cluster_config(self):
         self.cluster.create(
@@ -215,7 +215,7 @@ class TestDockerminikube(KubernetesManagerTest):
 
 
 class TestKVM2minikube(KubernetesManagerTest):
-    manager = MinikubeKVM2Manager
+    manager = MinikubeKVM2ManagerBase
 
 
 class TestExternal(KubernetesManagerTest):
@@ -233,30 +233,22 @@ class TestExternal(KubernetesManagerTest):
         k3d.delete()
 
 
-def test_k8s_manager(k8s_manager):
-    my_provider: AClusterManager = k8s_manager()
-    print(my_provider)
-    provider = my_provider()
-    print(provider.cluster_name)
-    print(provider.kubeconfig)
-
-
-def test_select_provider(monkeypatch):
-    provider_klass = select_provider_manager()
+def test_select_provider(monkeypatch, k8s_manager):
+    provider_klass = k8s_manager()
     assert issubclass(provider_klass, AClusterManager)
 
-    k3d_klass = select_provider_manager("k3d")
-    assert k3d_klass == K3dManagerBase
-    minikube_klass = select_provider_manager("minikube")
-    assert minikube_klass == MinikubeDockerManager
-    minikube_klass = select_provider_manager("minikube-docker")
-    assert minikube_klass == MinikubeDockerManager
-    minikube_klass = select_provider_manager("minikube-kvm2")
-    assert minikube_klass == MinikubeKVM2Manager
+    k3d_klass = k8s_manager("k3d")
+    assert k3d_klass.__name__ == "K3dManager"
+    minikube_klass = k8s_manager("minikube")
+    assert minikube_klass.__name__ == "MinikubeDockerManager"
+    minikube_klass = k8s_manager("minikube-docker")
+    assert minikube_klass.__name__ == "MinikubeDockerManager"
+    minikube_klass = k8s_manager("minikube-kvm2")
+    assert minikube_klass.__name__ == "MinikubeKVM2Manager"
     # if k3d is not available
     monkeypatch.setattr(K3dManagerBase, "get_binary_name", lambda: "k3dlol")
-    provider_klass = select_provider_manager()
-    assert provider_klass != K3dManagerBase
+    provider_klass = k8s_manager()
+    assert provider_klass.__name__ != "K3dManager"
 
     with pytest.raises(RuntimeError):
-        _ = select_provider_manager("rofl")
+        _ = k8s_manager("rofl")

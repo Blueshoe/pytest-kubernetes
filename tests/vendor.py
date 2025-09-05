@@ -3,15 +3,14 @@ import subprocess
 
 import pytest
 
-from pytest_kubernetes.providers import select_provider_manager
 from pytest_kubernetes.providers.base import AClusterManager
 
 
 @pytest.fixture(scope="session")
-def k8s_with_workload(request):
-    cluster = select_provider_manager()("my-cluster")
+def k8s_with_workload(request, k8s_manager):
+    cluster = k8s_manager()("my-cluster")
     # if minikube should be used
-    # cluster = select_provider_manager("minikube")("my-cluster")
+    # cluster = k8s_manager("minikube")("my-cluster")
     cluster.create()
     # init the cluster with a workload
     cluster.apply((Path(__file__).parent / Path("./fixtures/hello.yaml")).resolve())
