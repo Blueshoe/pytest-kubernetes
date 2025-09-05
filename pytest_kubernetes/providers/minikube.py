@@ -15,7 +15,7 @@ class MinikubeManager(AClusterManager):
         self._exec(["image", "load", image, "-p", self.cluster_name])
 
 
-class MinikubeKVM2Manager(MinikubeManager):
+class MinikubeKVM2ManagerBase(MinikubeManager):
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
         opts = kwargs.get("options", [])
 
@@ -59,7 +59,7 @@ class MinikubeKVM2Manager(MinikubeManager):
         )
 
 
-class MinikubeDockerManager(MinikubeManager):
+class MinikubeDockerManagerBase(MinikubeManager):
     def _on_create(self, cluster_options: ClusterOptions, **kwargs) -> None:
         opts = kwargs.get("options", [])
 

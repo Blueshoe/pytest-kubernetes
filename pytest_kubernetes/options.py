@@ -4,6 +4,7 @@ from pathlib import Path
 
 @dataclass
 class ClusterOptions:
+    cluster_name: str = ""
     api_version: str = field(default="1.25.3")
     # nodes: int = None
     kubeconfig_path: Path | None = None

@@ -53,12 +53,18 @@ class AClusterManager(ABC):
 
     _binary_name = ""
     _cluster_options: ClusterOptions = ClusterOptions()
-    cluster_name = ""
     context = None
 
-    def __init__(self, cluster_name: str, provider_config: str | None = None) -> None:
+    def __init__(
+        self,
+        cluster_name: str | None = None,
+        provider_config: str | None = None,
+        kubeconfig: str | None = None,
+    ) -> None:
         self._set_cluster_name(cluster_name, provider_config)
         self._ensure_executable()
+        if kubeconfig:
+            self._cluster_options.kubeconfig_path = kubeconfig
 
     def _set_cluster_name(self, cluster_name, provider_config) -> str:
         config_yaml = None
@@ -68,10 +74,12 @@ class AClusterManager(ABC):
                 self._cluster_options.provider_config.read_text()
             )
 
-        if config_yaml:
-            self.cluster_name = config_yaml.get("name", f"pytest-{cluster_name}")
-        else:
-            self.cluster_name = f"pytest-{cluster_name}"
+        if not self.cluster_name:
+            default = f"pytest-{cluster_name}" if cluster_name else "pytest"
+            if config_yaml:
+                self._cluster_options.cluster_name = config_yaml.get("name", default)
+            else:
+                self._cluster_options.cluster_name = default
         return self.cluster_name
 
     @classmethod
@@ -125,6 +133,10 @@ class AClusterManager(ABC):
             if self._cluster_options.kubeconfig_path
             else None
         )
+
+    @property
+    def cluster_name(self) -> str:
+        return self._cluster_options.cluster_name
 
     #
     # Interface
