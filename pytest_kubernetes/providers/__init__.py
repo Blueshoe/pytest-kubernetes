@@ -33,6 +33,8 @@ def select_provider_manager(
     if pytest_options and pytest_options.get("kubeconfig_override"):
         default_provider = EXTERNAL
         kubeconfig = pytest_options.get("kubeconfig_override")
+        if pytest_options.get("provider"):
+            name = pytest_options.get("provider")
 
     if not name and pytest_options and pytest_options.get("provider"):
         name = pytest_options.get("provider")
@@ -45,6 +47,8 @@ def select_provider_manager(
 
     if not name and default_provider:
         name = default_provider
+
+    cluster_options.kubeconfig_path = kubeconfig
 
     providers = {
         K3D: type(
