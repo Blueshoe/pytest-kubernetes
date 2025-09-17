@@ -240,7 +240,8 @@ class AClusterManager(ABC):
             self._set_cluster_name(
                 self.cluster_name, self._cluster_options.provider_config
             )
-        self._on_create(self._cluster_options, **kwargs)
+        if not self.ready(timeout=2):
+            self._on_create(self._cluster_options, **kwargs)
         # check if this cluster is ready: readyz check passed and default service account is available
         if not self.ready(timeout):
             raise RuntimeError(f"Cluster '{self.cluster_name}' is not ready.")
