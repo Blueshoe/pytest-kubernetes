@@ -21,23 +21,30 @@ def select_provider_manager(
 ) -> Type[AClusterManager]:
     kubeconfig = None
     cluster_options = ClusterOptions()
+    default_provider = None
 
-    if pytest_options and name and name.lower() == "external":
+    if pytest_options and name and name.lower() == EXTERNAL:
         kubeconfig = pytest_options.get("kubeconfig")
 
     if not name and pytest_options and pytest_options.get("kubeconfig"):
-        name = "external"
+        default_provider = EXTERNAL
         kubeconfig = pytest_options.get("kubeconfig")
 
     if pytest_options and pytest_options.get("kubeconfig_override"):
-        name = "external"
+        default_provider = EXTERNAL
         kubeconfig = pytest_options.get("kubeconfig_override")
+
+    if not name and pytest_options and pytest_options.get("provider"):
+        name = pytest_options.get("provider")
 
     # init with defaults from pytest args
     if pytest_options and pytest_options.get("cluster_name"):
         cluster_options.cluster_name = pytest_options.get("cluster_name")
     if pytest_options and pytest_options.get("version"):
         cluster_options.version = pytest_options.get("version")
+
+    if not name and default_provider:
+        name = default_provider
 
     providers = {
         K3D: type(
