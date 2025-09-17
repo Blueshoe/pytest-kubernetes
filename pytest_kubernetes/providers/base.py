@@ -241,8 +241,13 @@ class AClusterManager(ABC):
                 self.cluster_name, self._cluster_options.provider_config
             )
         self._on_create(self._cluster_options, **kwargs)
-        _i = 0
         # check if this cluster is ready: readyz check passed and default service account is available
+        if not self.ready(timeout):
+            raise RuntimeError(f"Cluster '{self.cluster_name}' is not ready.")
+
+    def ready(self, timeout: int = 20) -> bool:
+        """Check if this cluster is ready"""
+        _i = 0
         ready = "Nope"
         sa_available = "Nope"
         while _i < timeout:
@@ -264,9 +269,8 @@ class AClusterManager(ABC):
             else:
                 _i += 1
         else:
-            raise RuntimeError(
-                f"Cluster '{self.cluster_name}' is not ready. Readyz: {ready}, SA: {sa_available}"
-            )
+            return False
+        return True
 
     def delete(self) -> None:
         """Delete this cluster"""
