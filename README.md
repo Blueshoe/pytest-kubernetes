@@ -82,6 +82,70 @@ This cluster will be deleted once the test case is over.
 
 > Please note that you need to set *"--image-pull-policy=Never"* for images that you loaded into the cluster via the `k8s.load(name: str)` function (see example above).
 
+#### k8s_manager
+The _k8s_manager_ fixture provides a convenient factory method, similar to the util `select_provider_manager` (see below) to construct prepared Kubernetes clusters.
+
+`k8s_manager(name: Optional[str] = None) -> Type[AClusterManager]`
+
+In contrast to `select_provider_manager`, `k8s_manager` is sensitive to pytest-arguments from the command line or
+configuration file. It allows to override the standard configuration via the `--k8s-kubeconfig-override` argument
+to use an external cluster for this test run. It makes development a breeze.
+
+**Example**
+
+The following recipe does the following:
+1) Check if the cluster is already running (created outside, for example via `k3d cluster create --config k3d_cluster.yaml`)
+2) Creates a `k3d` cluster, if it's not running
+3) Prepares a namespace, purge existing objects if present
+4) Yields the fixture to the test case, or subrequest fixture
+5) Purges objects if cluster was not created during this test run; deletes cluster in case it was created
+
+This is used in [Gefyra](https://github.com/gefyrahq/gefyra/).
+
+
+```python
+@pytest.fixture(scope="module")
+def k3d(k8s_manager):
+    k8s: AClusterManager = k8s_manager("k3d")("gefyra")
+    # ClusterOptions() forces pytest-kubernetes to always write a new kubeconfig file to disk
+    cluster_exists = k8s.ready(timeout=1)
+    if not cluster_exists:
+        k8s.create(
+            ClusterOptions(api_version="1.29.5"),
+            options=[
+                "--agents",
+                "1",
+                "-p",
+                "8080:80@agent:0",
+                "-p",
+                "31820:31820/UDP@agent:0",
+                "--agents-memory",
+                "8G",
+            ],
+        )
+    if "gefyra" not in k8s.kubectl(["get", "ns"], as_dict=False):
+        k8s.kubectl(["create", "ns", "gefyra"])
+        k8s.wait("ns/gefyra", "jsonpath='{.status.phase}'=Active")
+    else:
+        purge_gefyra_objects(k8s)
+    os.environ["KUBECONFIG"] = str(k8s.kubeconfig)
+    yield k8s
+    if cluster_exists:
+        # delete existing bridges
+        purge_gefyra_objects(k8s)
+        k8s.kubectl(["delete", "ns", "gefyra"], as_dict=False)
+    else:
+        # we delete this cluster only when created during this run
+        k8s.delete()
+```
+
+This example allows to run test cases against an automatic ephemeral cluster, and a "long-living" cluster.
+
+To run local tests without losing time in the set up and tear down of the cluster, you can follow these steps:
+1) Create a local `k3d` cluster, for example from a config file: `k3d cluster create --config k3d_cluster.yaml`
+2) Write the kubeconfig to file: `k3d kubeconfig get gefyra > mycluster.yaml`
+3) Run the tests with an override: `pytest --k8s-kubeconfig-override mycluster.yaml --k8s-cluster-name gefyra --k8s-provider k3d -s -x tests/`
+
 ### Marks
 pytest-kubernetes uses [*pytest marks*](https://docs.pytest.org/en/7.1.x/how-to/mark.html) for specifying the cluster configuration for a test case
 
@@ -105,6 +169,7 @@ To write custom Kubernetes-based fixtures in your project you can make use of th
 
 #### `select_provider_manager`
 This function returns a deriving class of *AClusterManager* that is not created and wrapped in a fixture yet.
+**Remark:** Don not use this, if you can use the fixture `k8s_manager` instead (see above).
 
 `select_provider_manager(name: Optional[str] = None) -> Type[AClusterManager]`
 
