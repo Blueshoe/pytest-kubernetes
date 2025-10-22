@@ -54,12 +54,13 @@ class AClusterManager(ABC):
     _binary_name = ""
     _cluster_options: ClusterOptions = ClusterOptions()
     context = None
+    _created = True
 
     def __init__(
         self,
         cluster_name: str | None = None,
         provider_config: str | None = None,
-        kubeconfig: str | None = None,
+        kubeconfig: Path | None = None,
     ) -> None:
         self._set_cluster_name(cluster_name, provider_config)
         self._ensure_executable()
@@ -136,7 +137,7 @@ class AClusterManager(ABC):
 
     @property
     def cluster_name(self) -> str:
-        return self._cluster_options.cluster_name
+        return self._cluster_options.cluster_name or "pytest"
 
     #
     # Interface
@@ -244,6 +245,7 @@ class AClusterManager(ABC):
                 self.cluster_name, self._cluster_options.provider_config
             )
         if self.ready(timeout=2):
+            self._created = False
             return
         self._on_create(self._cluster_options, **kwargs)
         # check if this cluster is ready: readyz check passed and default service account is available
@@ -279,11 +281,13 @@ class AClusterManager(ABC):
 
     def delete(self) -> None:
         """Delete this cluster"""
-        self._on_delete()
-        if self.kubeconfig:
-            self.kubeconfig.unlink(missing_ok=True)
-            self._cluster_options.kubeconfig_path = None
-        sleep(1)
+        if self._created:
+            # if this cluster was not created by this manager, leave it alone
+            self._on_delete()
+            if self.kubeconfig:
+                self.kubeconfig.unlink(missing_ok=True)
+                self._cluster_options.kubeconfig_path = None
+            sleep(1)
 
     def reset(self) -> None:
         """Reset this cluster (delete if exists and recreates)"""

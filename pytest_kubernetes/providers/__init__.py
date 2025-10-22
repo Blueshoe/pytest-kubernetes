@@ -1,4 +1,4 @@
-import shutil, sys, argparse
+import shutil
 from typing import Type
 from pytest_kubernetes.options import ClusterOptions
 from pytest_kubernetes.providers.base import AClusterManager
@@ -91,7 +91,7 @@ def select_provider_manager(
             providers.get(KIND),
             providers.get(MINIKUBE_DOCKER),
         ]:
-            if not shutil.which(provider.get_binary_name()):
+            if provider is None or not shutil.which(provider.get_binary_name()):
                 continue
             return provider
         else:
