@@ -230,7 +230,9 @@ class AClusterManager(ABC):
         **kwargs,
     ) -> None:
         """Create this cluster"""
-        self._cluster_options = cluster_options or self._cluster_options
+        self._cluster_options = (
+            self._cluster_options | cluster_options
+        )  # merges these two together
         if not self._cluster_options.kubeconfig_path:
             tmp_kubeconfig = tempfile.NamedTemporaryFile(delete=False)
             tmp_kubeconfig.close()
@@ -240,8 +242,9 @@ class AClusterManager(ABC):
             self._set_cluster_name(
                 self.cluster_name, self._cluster_options.provider_config
             )
-        if not self.ready(timeout=2):
-            self._on_create(self._cluster_options, **kwargs)
+        if self.ready(timeout=2):
+            return
+        self._on_create(self._cluster_options, **kwargs)
         # check if this cluster is ready: readyz check passed and default service account is available
         if not self.ready(timeout):
             raise RuntimeError(f"Cluster '{self.cluster_name}' is not ready.")
