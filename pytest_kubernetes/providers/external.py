@@ -16,6 +16,7 @@ class ExternalManagerBase(AClusterManager):
     def _on_delete(self) -> None:
         pass
 
+    @classmethod
     def get_binary_name(cls) -> str:
         return ""
 
@@ -24,8 +25,6 @@ class ExternalManagerBase(AClusterManager):
 
     @property
     def kubeconfig(self) -> Path | None:
-        return Path(self._kubeconfig)
-
-    @kubeconfig.setter
-    def set_kubeconfig(self, kubeconfig: Path) -> None:
-        self._kubeconfig = str(kubeconfig)
+        if self._kubeconfig:
+            return Path(self._kubeconfig)
+        return None

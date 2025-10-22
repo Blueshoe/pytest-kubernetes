@@ -36,9 +36,7 @@ def k8s(request: FixtureRequest, k8s_manager):
         manager = cluster_cache[cache_key]
         del cluster_cache[cache_key]
     else:
-        manager: AClusterManager = manager_klass(
-            cluster_name, provider_config, external_kubeconfig
-        )  # type: ignore
+        manager = manager_klass(cluster_name, provider_config, external_kubeconfig)  # type: ignore
 
     def delete_cluster():
         manager.delete()

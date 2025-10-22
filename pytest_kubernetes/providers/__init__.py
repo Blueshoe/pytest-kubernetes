@@ -43,7 +43,7 @@ def select_provider_manager(
     if pytest_options and pytest_options.get("cluster_name"):
         cluster_options.cluster_name = pytest_options.get("cluster_name")
     if pytest_options and pytest_options.get("version"):
-        cluster_options.version = pytest_options.get("version")
+        cluster_options.api_version = str(pytest_options.get("version"))
 
     if not name and default_provider:
         name = default_provider
@@ -91,7 +91,7 @@ def select_provider_manager(
             providers.get(KIND),
             providers.get(MINIKUBE_DOCKER),
         ]:
-            if provider is None or not shutil.which(provider.get_binary_name()):
+            if provider is None or not shutil.which(provider.get_binary_name()):  # type: ignore
                 continue
             return provider
         else:
