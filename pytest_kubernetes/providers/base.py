@@ -230,9 +230,10 @@ class AClusterManager(ABC):
         **kwargs,
     ) -> None:
         """Create this cluster"""
-        self._cluster_options = (
-            self._cluster_options | cluster_options
-        )  # merges these two together
+        if cluster_options:
+            self._cluster_options = (
+                self._cluster_options | cluster_options
+            )  # merges these two together
         if not self._cluster_options.kubeconfig_path:
             tmp_kubeconfig = tempfile.NamedTemporaryFile(delete=False)
             tmp_kubeconfig.close()
