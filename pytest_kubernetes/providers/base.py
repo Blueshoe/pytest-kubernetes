@@ -53,12 +53,19 @@ class AClusterManager(ABC):
 
     _binary_name = ""
     _cluster_options: ClusterOptions = ClusterOptions()
-    cluster_name = ""
     context = None
+    _created = True
 
-    def __init__(self, cluster_name: str, provider_config: str | None = None) -> None:
+    def __init__(
+        self,
+        cluster_name: str | None = None,
+        provider_config: str | None = None,
+        kubeconfig: Path | None = None,
+    ) -> None:
         self._set_cluster_name(cluster_name, provider_config)
         self._ensure_executable()
+        if kubeconfig:
+            self._cluster_options.kubeconfig_path = kubeconfig
 
     def _set_cluster_name(self, cluster_name, provider_config) -> str:
         config_yaml = None
@@ -68,10 +75,12 @@ class AClusterManager(ABC):
                 self._cluster_options.provider_config.read_text()
             )
 
-        if config_yaml:
-            self.cluster_name = config_yaml.get("name", f"pytest-{cluster_name}")
-        else:
-            self.cluster_name = f"pytest-{cluster_name}"
+        if not self.cluster_name:
+            default = f"pytest-{cluster_name}" if cluster_name else "pytest"
+            if config_yaml:
+                self._cluster_options.cluster_name = config_yaml.get("name", default)
+            else:
+                self._cluster_options.cluster_name = default
         return self.cluster_name
 
     @classmethod
@@ -125,6 +134,10 @@ class AClusterManager(ABC):
             if self._cluster_options.kubeconfig_path
             else None
         )
+
+    @property
+    def cluster_name(self) -> str:
+        return self._cluster_options.cluster_name or "pytest"
 
     #
     # Interface
@@ -218,7 +231,10 @@ class AClusterManager(ABC):
         **kwargs,
     ) -> None:
         """Create this cluster"""
-        self._cluster_options = cluster_options or self._cluster_options
+        if cluster_options:
+            self._cluster_options = (
+                self._cluster_options | cluster_options
+            )  # merges these two together
         if not self._cluster_options.kubeconfig_path:
             tmp_kubeconfig = tempfile.NamedTemporaryFile(delete=False)
             tmp_kubeconfig.close()
@@ -228,9 +244,17 @@ class AClusterManager(ABC):
             self._set_cluster_name(
                 self.cluster_name, self._cluster_options.provider_config
             )
+        if self.ready(timeout=2):
+            self._created = False
+            return
         self._on_create(self._cluster_options, **kwargs)
-        _i = 0
         # check if this cluster is ready: readyz check passed and default service account is available
+        if not self.ready(timeout):
+            raise RuntimeError(f"Cluster '{self.cluster_name}' is not ready.")
+
+    def ready(self, timeout: int = 20) -> bool:
+        """Check if this cluster is ready"""
+        _i = 0
         ready = "Nope"
         sa_available = "Nope"
         while _i < timeout:
@@ -252,17 +276,18 @@ class AClusterManager(ABC):
             else:
                 _i += 1
         else:
-            raise RuntimeError(
-                f"Cluster '{self.cluster_name}' is not ready. Readyz: {ready}, SA: {sa_available}"
-            )
+            return False
+        return True
 
     def delete(self) -> None:
         """Delete this cluster"""
-        self._on_delete()
-        if self.kubeconfig:
-            self.kubeconfig.unlink(missing_ok=True)
-            self._cluster_options.kubeconfig_path = None
-        sleep(1)
+        if self._created:
+            # if this cluster was not created by this manager, leave it alone
+            self._on_delete()
+            if self.kubeconfig:
+                self.kubeconfig.unlink(missing_ok=True)
+                self._cluster_options.kubeconfig_path = None
+            sleep(1)
 
     def reset(self) -> None:
         """Reset this cluster (delete if exists and recreates)"""
