@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pytest-kubernetes"
-version = "0.7.0"
+version = "0.7.2"
 description = ""
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
 readme = "README.md"
