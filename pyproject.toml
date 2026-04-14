@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pytest-kubernetes"
 version = "0.7.2"
-description = ""
+description = "A lightweight pytest plugin for managing local Kubernetes clusters (minikube, k3d, kind)"
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
 readme = "README.md"
 packages = [{include = "pytest_kubernetes"}]
@@ -9,9 +9,10 @@ repository = "https://github.com/Blueshoe/pytest-kubernetes"
 classifiers = [
     "Framework :: Pytest",
     "Topic :: Software Development :: Testing",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10"
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
 [tool.poetry.dependencies]
