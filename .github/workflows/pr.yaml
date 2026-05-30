@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Install Poetry Action
-        uses: snok/install-poetry@v1.4.1
+        uses: snok/install-poetry@v1.4.2
       - name: Set up python
         id: setup-python
         uses: actions/setup-python@v6
