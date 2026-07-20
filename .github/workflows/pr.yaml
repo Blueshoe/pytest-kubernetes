@@ -20,7 +20,7 @@ jobs:
         uses: snok/install-poetry@v1.4.2
       - name: Set up python
         id: setup-python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Load cached venv
