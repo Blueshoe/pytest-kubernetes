@@ -1,10 +1,9 @@
 import json
-from typing import Dict, Union
 import os
-from pathlib import Path
 import shutil
 import subprocess
-from typing import List
+from pathlib import Path
+from typing import Dict, List, Union
 
 
 class Kubectl:
@@ -37,7 +36,7 @@ class Kubectl:
             raise RuntimeError("Executable not found")
 
     def _get_exec_env(self) -> Dict:
-        return os.environ  # type: ignore
+        return dict(os.environ)
 
     def _get_command_prefix(self) -> List[str]:
         return self._prefix or []
