@@ -1,6 +1,7 @@
+import os
+import yaml
 from pytest_kubernetes.providers.base import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
-import yaml
 
 
 class MinikubeManager(AClusterManager):
@@ -91,6 +92,9 @@ class MinikubeDockerManagerBase(MinikubeManager):
                 "--kubernetes-version",
                 f"v{cluster_options.api_version}",
             ]
+
+        if os.name != "nt" and hasattr(os, "geteuid") and os.geteuid() == 0 and "--force" not in opts:
+            opts += ["--force"]
 
         self._exec(
             [
