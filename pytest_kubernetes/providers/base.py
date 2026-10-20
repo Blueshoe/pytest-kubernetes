@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import copy
 import os
 import shutil
 import subprocess
@@ -62,6 +63,7 @@ class AClusterManager(ABC):
         provider_config: str | None = None,
         kubeconfig: Path | None = None,
     ) -> None:
+        self._cluster_options = copy.copy(self._cluster_options)
         self._set_cluster_name(cluster_name, provider_config)
         self._ensure_executable()
         if kubeconfig:
@@ -75,12 +77,15 @@ class AClusterManager(ABC):
                 self._cluster_options.provider_config.read_text()
             )
 
-        if not self.cluster_name:
-            default = f"pytest-{cluster_name}" if cluster_name else "pytest"
-            if config_yaml:
-                self._cluster_options.cluster_name = config_yaml.get("name", default)
+        if config_yaml and "name" in config_yaml:
+            self._cluster_options.cluster_name = config_yaml["name"]
+        elif cluster_name:
+            if not cluster_name.startswith("pytest-"):
+                self._cluster_options.cluster_name = f"pytest-{cluster_name}"
             else:
-                self._cluster_options.cluster_name = default
+                self._cluster_options.cluster_name = cluster_name
+        else:
+            self._cluster_options.cluster_name = "pytest"
         return self.cluster_name
 
     @classmethod

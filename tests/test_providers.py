@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 from time import sleep
 from typing import Type
@@ -160,6 +161,8 @@ class KubernetesManagerTest:
         self.cluster.delete()
 
     def setup_method(self, method):
+        if self.manager and not shutil.which(self.manager.get_binary_name()):
+            pytest.skip(f"Binary '{self.manager.get_binary_name()}' not found")
         self.cluster = self.manager(self.cluster_name)
 
 
@@ -201,6 +204,8 @@ class TestDockerminikube(KubernetesManagerTest):
     manager = MinikubeDockerManagerBase
 
     def test_custom_cluster_config(self):
+        if not Path("/dev/kvm").exists():
+            pytest.skip("KVM device /dev/kvm not available for mk_config.yaml")
         self.cluster.create(
             cluster_options=ClusterOptions(
                 provider_config=Path(__file__).parent
@@ -217,9 +222,15 @@ class TestDockerminikube(KubernetesManagerTest):
 class TestKVM2minikube(KubernetesManagerTest):
     manager = MinikubeKVM2ManagerBase
 
+    def setup_method(self, method):
+        if not Path("/dev/kvm").exists():
+            pytest.skip("KVM device /dev/kvm not available")
+        super().setup_method(method)
+
 
 class TestExternal(KubernetesManagerTest):
     manager = ExternalManagerBase
+    cluster_name = "pytest-external"
 
     def setup_method(self, method):
         # create an external cluster, locally
@@ -231,6 +242,12 @@ class TestExternal(KubernetesManagerTest):
     def teardown_method(self, method):
         k3d = select_provider_manager("k3d")("pytest-external")
         k3d.delete()
+
+    def test_b_reset_cluster(self):
+        pytest.skip("External clusters cannot be reset")
+
+    def test_e_load_image_read_logs(self, a_unique_image):
+        pytest.skip("External clusters do not support loading local images")
 
 
 def test_select_provider(monkeypatch, k8s_manager):
