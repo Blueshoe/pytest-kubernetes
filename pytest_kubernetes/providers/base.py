@@ -79,6 +79,10 @@ class AClusterManager(ABC):
 
         if config_yaml and "name" in config_yaml:
             self._cluster_options.cluster_name = config_yaml["name"]
+        elif self._cluster_options.cluster_name and (
+            cluster_name is None or self._cluster_options.cluster_name == cluster_name
+        ):
+            pass
         elif cluster_name:
             if not cluster_name.startswith("pytest-"):
                 self._cluster_options.cluster_name = f"pytest-{cluster_name}"
