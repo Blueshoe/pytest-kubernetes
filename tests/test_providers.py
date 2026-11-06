@@ -269,3 +269,21 @@ def test_select_provider(monkeypatch, k8s_manager):
 
     with pytest.raises(RuntimeError):
         _ = k8s_manager("rofl")
+
+
+def test_cluster_name_resolution_with_k8s_cluster_name():
+    # Simulates pytest run with --k8s-cluster-name gefyra
+    k3d_klass = select_provider_manager("k3d", {"cluster_name": "gefyra"})
+
+    # In conftest.py: k8s_manager("k3d")("gefyra")
+    cluster = k3d_klass("gefyra")
+    assert cluster.cluster_name == "gefyra"
+
+    # In conftest.py: k8s_manager("k3d")() without args
+    cluster_no_arg = k3d_klass()
+    assert cluster_no_arg.cluster_name == "gefyra"
+
+    # Default/unconfigured: ad-hoc cluster names get prefixed with pytest-
+    default_klass = select_provider_manager("k3d", {"cluster_name": "pytest"})
+    adhoc_cluster = default_klass("my-cluster")
+    assert adhoc_cluster.cluster_name == "pytest-my-cluster"
